@@ -83,7 +83,6 @@
 }
 
 -(void)layoutSubviews{
-    
     [self.bottomView mas_makeConstraints:^(MASConstraintMaker *make) {
         make.width.equalTo(self.mas_width);
         make.height.equalTo(@60);
@@ -109,9 +108,6 @@
         make.bottom.equalTo(self.playBtn.mas_bottom).equalTo(@(-10));
         make.trailing.equalTo(self.fullScreenBtn.mas_leading).equalTo(@(-10));
     }];
-    
-    self.playBtn.frame = CGRectMake(0, 0, 50, 50);
-    NSLog(@"%@", NSStringFromCGRect(self.frame));
 }
 
 #pragma mark - action
@@ -126,6 +122,27 @@
         [self.player play];
     }
     abtn.selected = !abtn.selected;
+}
+
+- (void) clickFullScreenBtn:(UIButton *)btn{
+    //选中全屏
+    if (btn.selected) {
+        //本身view做逆时针旋转90°，然后调整自身frame
+        self.transform = CGAffineTransformMakeRotation(M_PI_2);
+        CGRect tmpFrame = self.frame;
+        tmpFrame.size = CGSizeMake(self.frame.size.height, self.frame.size.width);
+        self.frame = tmpFrame;
+        [self setNeedsUpdateConstraints];
+        [self setNeedsLayout];
+    }
+    //退出全屏
+    else{
+        self.transform = CGAffineTransformMakeRotation(-M_PI_2);
+        CGRect tmpFrame = self.frame;
+        tmpFrame.size = CGSizeMake(self.frame.size.width, self.frame.size.height);
+        self.frame = tmpFrame;
+    }
+    btn.selected = !btn.selected;
 }
 
 #pragma mark - KVO
@@ -157,7 +174,9 @@
 -(void)setMediaURL:(NSString *)mediaURL{
     if (_mediaURL != mediaURL) {
         _mediaURL = mediaURL;
-        AVAsset *asset = [AVAsset assetWithURL:[[NSBundle mainBundle] URLForResource:@"index" withExtension:@"mp4"]];
+        NSString *path = [[NSBundle mainBundle] pathForResource:@"index" ofType:@"mp4"];
+        NSURL *url = [NSURL fileURLWithPath:path];
+        AVAsset *asset = [AVAsset assetWithURL:url];
         AVPlayerItem *item = [[AVPlayerItem alloc] initWithAsset:asset];
 //        AVPlayerItem *item = [[AVPlayerItem alloc] initWithURL:[NSURL URLWithString:_mediaURL]];
         AVPlayer *tmpPlayer = [AVPlayer playerWithPlayerItem:item];
@@ -200,6 +219,7 @@
         [_fullScreenBtn setImage:[UIImage imageNamed:@"btn_video_zoom_out"] forState:UIControlStateNormal];
         [_fullScreenBtn setImage:[UIImage imageNamed:@"btn_video_zoom_in"] forState:UIControlStateSelected];
         _playBtn.showsTouchWhenHighlighted = true;
+        [_fullScreenBtn addTarget:self action:@selector(clickFullScreenBtn:) forControlEvents:UIControlEventTouchUpInside];
     }
     return _fullScreenBtn;
 }
